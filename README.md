@@ -11,9 +11,41 @@ curl --location '{{HOST-URL}}/segment-bot-mapping' \
 }'
 ```
 
+Response:
+
+```
+{
+    "data": {
+        "insert_segment_bots_one": {
+            "id": 9,
+            "segment_id": 2,
+            "bot_id": "93abe780-ab8a-4619-a0da-8f4f16156231",
+            "created_at": "2023-03-07T07:26:38.738862+00:00"
+        }
+    }
+}
+```
+
 2. List Mentors for Segment:
 ```
 curl --location '{{HOST-URL}}/segments/1/mentors?limit=1&offset=0&title=Test%20Title&description=Some%20Description&deepLink=https%3A%2F%2Fgoogle.com'
+```
+
+Response:
+
+```
+{
+    "data": [
+        {
+            "fcmToken": "xxxx",
+            "phoneNo": "xxxx",
+            "name": "xxxx",
+            "title": "Test Title",
+            "description": "Some Description",
+            "fcmClickActionUrl": "https://google.com"
+        }
+    ]
+}
 ```
 
 ### Setup
