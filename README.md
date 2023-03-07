@@ -52,3 +52,6 @@ Response:
 1. Clone the repo
 2. Create `.env` & configure the variables as needed. (refer `sample.env` for format)
 3. Hit `docker-compose up -d`
+
+### TODOs
+- [ ] Add authentication layer
