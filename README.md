@@ -20,4 +20,3 @@ curl --location '{{HOST-URL}}/segments/1/mentors?limit=1&offset=0&title=Test%20T
 1. Clone the repo
 2. Create `.env` & configure the variables as needed. (refer `sample.env` for format)
 3. Hit `docker-compose up -d`
-4. Metrics will be exposed at 'http://localhost:xxxx/metrics'
