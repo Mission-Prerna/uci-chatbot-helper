@@ -28,8 +28,14 @@ Response:
 
 2. List Mentors for Segment:
 ```
-curl --location '{{HOST-URL}}/segments/1/mentors?limit=1&offset=0&title=Test%20Title&description=Some%20Description&deepLink=https%3A%2F%2Fgoogle.com'
+curl --location '{{HOST-URL}}/segments/{:segmentId}/mentors?limit=1&offset=0&title=Test%20Title&description=Some%20Description&deepLink=https%3A%2F%2Fgoogle.com'
 ```
+- **:segmentId**: ID of the segment
+- **deepLink**: deeplink to be embedded in the app (will be replaced with `fcmClickActionUrl` in the response body)
+- **limit**: limit on number of records to fetch; defaults to 10
+- **offset**: offset for pagination; defaults to 0
+- **title**: (OPTIONAL) if present - it'll be returned in the response as well
+- **description**: (OPTIONAL) if present - it'll be returned in the response as well
 
 Response:
 
