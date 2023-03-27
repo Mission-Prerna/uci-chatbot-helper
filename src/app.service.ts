@@ -89,14 +89,17 @@ export class AppService {
     const results = await this.hasuraGraphQLCall(query);
     const finalData = [];
     results?.data?.mentor?.forEach(item => {
-      finalData.push({
-        fcmToken: item.token.token,
-        phoneNo: item.phone_no,
-        name: item.officer_name,
-        title: title,
-        description: description,
-        fcmClickActionUrl: deepLink,
-      })
+      if (item.token?.token) {
+        // if mentors have tokens mapped to them
+        finalData.push({
+          fcmToken: item.token.token,
+          phoneNo: item.phone_no,
+          name: item.officer_name,
+          title: title,
+          description: description,
+          fcmClickActionUrl: deepLink,
+        })
+      }
     });
     return {
       data: finalData
