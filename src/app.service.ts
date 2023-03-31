@@ -68,7 +68,7 @@ export class AppService {
     return await this.hasuraGraphQLCall(query);
   }
 
-  async getMentorsForSegment(segmentId: bigint, title: string, description: string, deepLink: string, limit: string = "10", offset: string = "0") {
+  async getMentorsForSegment(segmentId: bigint, title: string, description: string, deepLink: string, limit: string = "10000", offset: string = "0") {
     const query = {
       query: `
         query GetMentorsForSegment($segment_id: bigint, $limit: Int, $offset: Int) {
