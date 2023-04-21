@@ -72,7 +72,7 @@ export class AppService {
     const query = {
       query: `
         query GetMentorsForSegment($segment_id: bigint, $limit: Int, $offset: Int) {
-          mentor(where: {segmentations: {segment_id: {_eq: $segment_id}}}, limit: $limit, offset: $offset) {
+          mentor(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset) {
             phone_no
             officer_name
             token {
@@ -89,17 +89,14 @@ export class AppService {
     const results = await this.hasuraGraphQLCall(query);
     const finalData = [];
     results?.data?.mentor?.forEach(item => {
-      if (item.token?.token) {
-        // if mentors have tokens mapped to them
-        finalData.push({
-          fcmToken: item.token.token,
-          phoneNo: item.phone_no,
-          name: item.officer_name,
-          title: title,
-          description: description,
-          fcmClickActionUrl: deepLink,
-        })
-      }
+      finalData.push({
+        fcmToken: item.token.token,
+        phoneNo: item.phone_no,
+        name: item.officer_name,
+        title: title,
+        description: description,
+        fcmClickActionUrl: deepLink,
+      })
     });
     return {
       data: finalData
