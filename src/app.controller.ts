@@ -28,7 +28,7 @@ export class AppController {
     return this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
   }
 
-  @Get('/segments/:id/count')
+  @Get('/segments/:id/mentors-count')
   getCountForSegment(
     @Param('id') segmentId: bigint,
   ) {
