@@ -102,4 +102,26 @@ export class AppService {
       data: finalData
     };
   }
+
+  async getCountForSegment(segmentId: bigint) {
+    const query = {
+      query: `
+      query getCountForSegment($segment_id: bigint) {
+        mentor_aggregate(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}) {
+          aggregate {
+            count
+          }
+        }
+      }`,
+      variables: {
+        segment_id: segmentId,
+      }
+    }
+    const results = await this.hasuraGraphQLCall(query);
+    const segmentCount = results?.data?.mentor_aggregate?.aggregate?.count;
+    return {
+      totalCount: segmentCount
+    };
+  }
+
 }
