@@ -89,8 +89,10 @@ export class AppService {
     const results = await this.hasuraGraphQLCall(query);
     const finalData = [];
     results?.data?.mentor?.forEach(item => {
+      //FIXME Replace ASAP
       finalData.push({
-        fcmToken: item.token.token,
+        //fcmToken: item.token.token,
+        fcmToken: 'fJsJD2E-RG2ZOsTVDnEHEp:APA91bGNuzh6MQ0uYRWpLTTtHwf8Qy-Zb2xfSbpcaMHnpI9OAodWzpzizj1RhobUOX7vB4sG8BqFq-HgI7KiBfqx1MeoSdNoZZ2rmLsC_Lo8p6KO0l-RqbgeoN51-6F_enKGAPtr2Zno',
         phoneNo: item.phone_no,
         name: item.officer_name,
         title: title,
