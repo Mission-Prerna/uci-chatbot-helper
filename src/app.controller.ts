@@ -14,20 +14,12 @@ export class AppController {
     return this.appService.getHealth();
   }
 
-  @Roles(
-    'Admin',
-    'OpenRole'
-  )
-  @UseGuards(JwtAuthGuard)
   @Post('/segment-bot-mapping')
   createSegmentBotMapping(@Body() dto: CreateSegmentBotMappingDto) {
     return this.appService.createSegmentBotMapping(dto);
   }
 
-  @Roles(
-    'Admin',
-    'OpenRole'
-  )
+  @Roles('OpenRole')
   @UseGuards(JwtAuthGuard)
   @Get('/segments/:id/mentors')
   getMentorsForSegment(
