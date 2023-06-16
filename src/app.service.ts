@@ -72,7 +72,7 @@ export class AppService {
     const query = {
       query: `
         query GetMentorsForSegment($segment_id: bigint, $limit: Int, $offset: Int) {
-          mentor(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset) {
+          mentor(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset, order_by: {id: asc}) {
             phone_no
             officer_name
             token {
