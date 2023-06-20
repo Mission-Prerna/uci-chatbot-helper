@@ -19,7 +19,7 @@ export class AppController {
     return this.appService.createSegmentBotMapping(dto);
   }
 
-  @Roles('OpenRole')
+  @Roles('Admin')
   @UseGuards(JwtAuthGuard)
   @Get('/segments/:id/mentors')
   getMentorsForSegment(
