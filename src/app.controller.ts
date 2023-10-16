@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
