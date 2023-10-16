@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
 import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
+import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 
 @Injectable()
 export class AppService {
@@ -63,6 +64,23 @@ export class AppService {
       variables: {
         segment_id: data.segmentId,
         bot_id: data.botId
+      }
+    }
+    return await this.hasuraGraphQLCall(query);
+  }
+
+  async deleteSegmentBotMapping(data: DeleteSegmentBotMappingDto) {
+    const query = {
+      query: `
+      mutation deleteSegmentBots($bot_ids: [uuid!]!) {
+        delete_segment_bots(where : {
+          bot_id:{ _in : $bot_ids}
+        }) {
+         affected_rows
+        }
+    }`,
+      variables: {
+        bot_ids: data.bot_ids
       }
     }
     return await this.hasuraGraphQLCall(query);

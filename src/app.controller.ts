@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
+import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
+
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
@@ -17,6 +19,13 @@ export class AppController {
   @Post('/segment-bot-mapping')
   createSegmentBotMapping(@Body() dto: CreateSegmentBotMappingDto) {
     return this.appService.createSegmentBotMapping(dto);
+  }
+
+  @Roles('OpenRole')
+  @UseGuards(JwtAuthGuard)
+  @Delete('/segment-bot-mapping')
+  deleteSegmentBotMapping(@Query() dto: DeleteSegmentBotMappingDto) {
+    return this.appService.deleteSegmentBotMapping(dto);
   }
 
   @Roles('OpenRole')
