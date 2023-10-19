@@ -80,7 +80,7 @@ export class AppService {
         }
     }`,
       variables: {
-        bot_ids: data.bot_ids
+        bot_ids: data.bot_ids.split(',')
       }
     }
     return await this.hasuraGraphQLCall(query);
