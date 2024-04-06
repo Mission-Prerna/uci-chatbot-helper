@@ -16,19 +16,21 @@ export class AppController {
     return this.appService.getHealth();
   }
 
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
   @Post('/segment-bot-mapping')
   createSegmentBotMapping(@Body() dto: CreateSegmentBotMappingDto) {
     return this.appService.createSegmentBotMapping(dto);
   }
 
-  @Roles('OpenRole')
+  @Roles('Admin')
   @UseGuards(JwtAuthGuard)
   @Delete('/segment-bot-mapping')
   deleteSegmentBotMapping(@Query() dto: DeleteSegmentBotMappingDto) {
     return this.appService.deleteSegmentBotMapping(dto);
   }
 
-  @Roles('OpenRole')
+  @Roles('Admin')
   @UseGuards(JwtAuthGuard)
   @Get('/segments/:id/mentors')
   getMentorsForSegment(
@@ -42,6 +44,8 @@ export class AppController {
     return this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
   }
 
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
   @Get('/segments/:id/mentors/count')
   getCountForSegment(
     @Param('id') segmentId: bigint,
