@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
 import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
+import { SegmentMentorMappingDto } from './dto/CreateMentorSegmentMapping.dto';
 
 @Injectable()
 export class AppService {
@@ -39,10 +40,11 @@ export class AppService {
         })
         .pipe(
           map((res) => {
-            if (res?.data?.errors) {
+            const error = res?.data?.errors
+            if (error) {
               // log the error globally & throw 500
-              this.logger.error('GraphQl Errors:', res.data.errors);
-              throw new InternalServerErrorException(null, 'GraphQl Error occurred.');
+              this.logger.error('GraphQl Errors:', error);
+              throw new InternalServerErrorException(null, error?.[0]?.message || 'GraphQl Error occurred.');
             }
             return res.status == 200 ? res.data : null;
           }),
@@ -141,5 +143,115 @@ export class AppService {
       totalCount: segmentCount
     };
   }
+  
+  async getAllSegments() {
+    const query = {
+      query: `
+      query {
+        segments {
+          id
+          name
+          description
+          created_at
+          updated_at
+        }
+      }`,
+    };
+    const results = await this.hasuraGraphQLCall(query);
+    return results?.data?.segments || [];
+  }
 
+  async createSegmentAndMapping(
+    segmentName: string,
+    segmentDescription: string,
+    phoneNumbers: string[],
+  ) {
+    // Create segment and fetch mentors concurrently
+    const [segmentResult, mentors] = await Promise.all([
+      this.createSegment(segmentName, segmentDescription),
+      this.fetchMentorIds(phoneNumbers)
+  ]);
+
+    //  create segment mentor mappings
+    const mentorSegmentMappings: SegmentMentorMappingDto[] = mentors.map((mentor) => {
+      return {
+        mentor_id: mentor.id,
+        segment_id: segmentResult.id,
+        phone_no:mentor.phone_no
+      };
+    });
+
+    const mappingsResult = await this.createMappings(mentorSegmentMappings);
+
+    // return segment and mapping response
+    return {
+      count: mappingsResult,
+      segment: segmentResult,
+      mentorsMappedWithSegment: mentorSegmentMappings,
+    };
+  }
+
+  async createSegment(segmentName: string, segmentDescription: string) {
+    // create a new segment
+    const query = {
+      query: `
+        mutation CreateSegment($name: String!, $description: String!) {
+          insert_segments_one(
+            object: { name: $name, description: $description }
+          ) {
+            id
+            name
+            description
+            created_at
+            updated_at
+          }
+        }`,
+      variables: {
+        name: segmentName,
+        description: segmentDescription,
+      },
+    };
+    const result = await this.hasuraGraphQLCall(query);
+    return result?.data?.insert_segments_one;
+  }
+
+  async fetchMentorIds(phoneNumbers: string[]) {
+    const query = {
+      query: `
+        query GetMentorIds($phoneNumbers: [String!]!) {
+          mentor(where: {phone_no: {_in: $phoneNumbers}}) {
+            id,
+            phone_no
+          }
+        }`,
+      variables: {
+        phoneNumbers: phoneNumbers,
+      },
+    };
+
+    const result = await this.hasuraGraphQLCall(query);
+    return result?.data?.mentor || [];
+  }
+
+  async createMappings(mentorSegmentMappings: SegmentMentorMappingDto[]) {
+       // Create mentor and segment mappings in batch
+       const mutation = {
+        query: `
+            mutation CreateMappings($objects: [mentor_segmentation_insert_input!]!) {
+                insert_mentor_segmentation(objects: $objects) {
+                    affected_rows
+                }
+            }`,
+        variables: {
+            objects: mentorSegmentMappings.map((mapping) => ({
+                mentor_id: parseInt(mapping.mentor_id),
+                segment_id: parseInt(mapping.segment_id),
+            })),
+        },
+    };
+    const result = await this.hasuraGraphQLCall(mutation);
+    return result?.data?.insert_mentor_segmentation?.affected_rows || 0;
+  }
+  
+  
 }
