@@ -4,6 +4,7 @@ import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
+import { CreateSegmentDto } from './dto/CreateSegment.dto';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
@@ -51,5 +52,24 @@ export class AppController {
     @Param('id') segmentId: bigint,
   ) {
     return this.appService.getCountForSegment(segmentId);
+  }
+
+  @Get('/segments')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  getAllSegment() {
+    return this.appService.getAllSegments();
+  }
+
+  @Post('/segment/phone')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  CreateSegmentAndMapping(@Body() body: CreateSegmentDto) {
+    const { segment_name, segment_description, phone_numbers } = body;
+    return this.appService.createSegmentAndMapping(
+      segment_name,
+      segment_description,
+      phone_numbers,
+    );
   }
 }
