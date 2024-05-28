@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
+import { CreateSegmentBotMappingDto, CreateSegmentBotMappingDtoV2 } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
@@ -71,5 +71,43 @@ export class AppController {
       segment_description,
       phone_numbers,
     );
+  }
+
+  @Get('v2/segments/:ids/mentors/count')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  async getCountForSegmentV2(@Param('ids') segmentIdsParam: string) {
+    const segmentIds: bigint[]= segmentIdsParam.split(",").map(id=> Number(id.trim()) as unknown as bigint)
+    return await this.appService.getCountForSegmentV2(segmentIds);
+  }
+
+  @Get('v2/segments/:ids/mentors')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  async getMentorsForSegmentV2(
+    @Param('ids') segmentIds: string,
+    @Query('title') title: string,
+    @Query('description') description: string,
+    @Query('deepLink') deepLink: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const segmentsIds: bigint[] = segmentIds.split(",").map(id=> Number(id.trim()) as unknown as bigint)
+    let result = {}
+    for (const segmentId of segmentsIds) {
+    const res =  await this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
+    result = {...result,...res}
+    }
+    return result
+  }
+
+  @Post('v2/segment-bot-mapping')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  async createSegmentBotMappingV2(@Body() dto: CreateSegmentBotMappingDtoV2) {
+    return await this.appService.createSegmentBotMapping({
+      ...dto,
+      segmentId: Number(dto.segmentId) as unknown as bigint,
+    });
   }
 }

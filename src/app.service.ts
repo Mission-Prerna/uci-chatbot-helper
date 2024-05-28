@@ -144,6 +144,41 @@ export class AppService {
     };
   }
   
+  async getCountForSegmentV2(segmentIds) {
+    let totalCounts = {
+      totalCounts: 0, // Initialize totalCounts to zero
+      segment_id: {} // Initialize segment_id totalCounts
+    };
+  
+    // Loop through each segment ID and query the total count for that segment
+    for (const segmentId of segmentIds) {
+      const query = {
+        query: `
+          query getCountForSegment($segment_id: bigint) {
+            mentor_aggregate(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}) {
+              aggregate {
+                count
+              }
+            }
+          }`,
+        variables: {
+          segment_id: segmentId,
+        }
+      };
+  
+      const results = await this.hasuraGraphQLCall(query);
+      const segmentCount = results?.data?.mentor_aggregate?.aggregate?.count;
+  
+      // Update totalCounts for each segment
+      totalCounts.segment_id[segmentId] = segmentCount;
+      
+      // Increment totalCounts['totalCounts'] by segmentCount
+      totalCounts['totalCounts'] += segmentCount;
+    }
+  
+    return totalCounts;
+  }
+  
   async getAllSegments() {
     const query = {
       query: `
