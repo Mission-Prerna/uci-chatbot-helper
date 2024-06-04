@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
-import { CreateSegmentBotMappingDto } from './dto/CreateSegmentBotMapping.dto';
+import { CreateSegmentBotMappingDto, CreateSegmentBotMappingDtoV2 } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 import { SegmentMentorMappingDto } from './dto/CreateMentorSegmentMapping.dto';
 
@@ -288,5 +288,31 @@ export class AppService {
     return result?.data?.insert_mentor_segmentation?.affected_rows || 0;
   }
   
-  
+  async createSegmentBotMappingV2(data: CreateSegmentBotMappingDtoV2) {
+    const segmentBotMappings = data.segmentId
+      .split(',')
+      .map((id) => ({
+        segment_id: Number(id.trim()) as unknown as bigint,
+        bot_id: data.botId,
+      }));
+
+    const query = {
+      query: `
+        mutation InsertSegmentBots($segmentBotMappings: [segment_bots_insert_input!]!) {
+          insert_segment_bots(objects: $segmentBotMappings) {
+            returning {
+              id
+              segment_id
+              bot_id
+              created_at
+            }
+          }
+        }`,
+      variables: {
+        segmentBotMappings,
+      },
+    };
+
+    return await this.hasuraGraphQLCall(query);
+  }
 }
