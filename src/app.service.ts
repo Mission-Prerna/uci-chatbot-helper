@@ -315,4 +315,48 @@ export class AppService {
 
     return await this.hasuraGraphQLCall(query);
   }
+
+  async getMentorsForSegmentsV2(
+    segmentIds: bigint[],
+    title: string,
+    description: string,
+    deepLink: string,
+    limit: string = '200000',
+    offset: string = '0',
+  ) {
+    const query = {
+      query: `
+            query GetMentorsForSegments($segment_ids: [bigint!], $limit: Int, $offset: Int) {
+                mentor(where: {segmentations: {segment_id: {_in: $segment_ids}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset, order_by: {id: asc}) {
+                    phone_no
+                    officer_name
+                    token {
+                        token
+                    }
+                }
+            }`,
+      variables: {
+        segment_ids: segmentIds,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      },
+    };
+
+    const results = await this.hasuraGraphQLCall(query);
+
+    const finalData =
+      results?.data?.mentor?.map((item) => ({
+        fcmToken: item.token.token,
+        phoneNo: item.phone_no,
+        name: item.officer_name,
+        title: title,
+        description: description,
+        fcmClickActionUrl: deepLink,
+      })) || [];
+
+    return {
+      data: finalData,
+    };
+  }
+
 }
