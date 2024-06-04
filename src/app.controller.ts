@@ -105,9 +105,6 @@ export class AppController {
   @Roles('Admin')
   @UseGuards(JwtAuthGuard)
   async createSegmentBotMappingV2(@Body() dto: CreateSegmentBotMappingDtoV2) {
-    return await this.appService.createSegmentBotMapping({
-      ...dto,
-      segmentId: Number(dto.segmentId) as unknown as bigint,
-    });
+    return await this.appService.createSegmentBotMappingV2(dto);
   }
 }
