@@ -92,13 +92,18 @@ export class AppController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    const segmentsIds: bigint[] = segmentIds.split(",").map(id=> Number(id.trim()) as unknown as bigint)
-    let result = {}
-    for (const segmentId of segmentsIds) {
-    const res =  await this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
-    result = {...result,...res}
-    }
-    return result
+    const segmentsIds: bigint[] = segmentIds
+      .split(',')
+      .map((id) => Number(id.trim()) as unknown as bigint);
+
+    return await this.appService.getMentorsForSegmentsV2(
+      segmentsIds,
+      title,
+      description,
+      deepLink,
+      limit,
+      offset,
+    );
   }
 
   @Post('v2/segment-bot-mapping')
