@@ -1,20 +1,35 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateSegmentBotMappingDto, CreateSegmentBotMappingDtoV2 } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
 import { CreateSegmentDto } from './dto/CreateSegment.dto';
+import { AppServiceWithPrisma } from './app.service_prisma';
+import { PrismaClient } from '@prisma/client';
+import { HealthCheckResult, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppServiceWithPrisma,    
+    private readonly healthCheckService: HealthCheckService,
+    private readonly prismaHealthIndicator: PrismaHealthIndicator,
+    private readonly prismaClient: PrismaClient,
+  ) {}
+
+  @Get()
+  getOk():string {
+    return this.appService.getHealth()
+  }
 
   @Get('/health')
-  getHealth(): string {
-    return this.appService.getHealth();
+  async getHealth():Promise<HealthCheckResult> {
+    return await this.healthCheckService.check([
+      () => this.prismaHealthIndicator.pingCheck('database', this.prismaClient)
+    ]);
   }
 
   @Roles('Admin')
@@ -39,8 +54,8 @@ export class AppController {
     @Query('title') title: string,
     @Query('description') description: string,
     @Query('deepLink') deepLink: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     return this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
   }
@@ -89,8 +104,8 @@ export class AppController {
     @Query('title') title: string,
     @Query('description') description: string,
     @Query('deepLink') deepLink: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const segmentsIds: bigint[] = segmentIds
       .split(',')

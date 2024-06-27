@@ -88,7 +88,7 @@ export class AppService {
     return await this.hasuraGraphQLCall(query);
   }
 
-  async getMentorsForSegment(segmentId: bigint, title: string, description: string, deepLink: string, limit: string = "200000", offset: string = "0") {
+  async getMentorsForSegment(segmentId: bigint, title: string, description: string, deepLink: string, limit: number = 200000, offset: number = 0) {
     const query = {
       query: `
         query GetMentorsForSegment($segment_id: bigint, $limit: Int, $offset: Int) {
@@ -102,8 +102,8 @@ export class AppService {
         }`,
       variables: {
         segment_id: segmentId,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        limit: Number(limit),
+        offset: Number(offset)
       }
     }
     const results = await this.hasuraGraphQLCall(query);
@@ -321,8 +321,8 @@ export class AppService {
     title: string,
     description: string,
     deepLink: string,
-    limit: string = '200000',
-    offset: string = '0',
+    limit: number = 200000,
+    offset: number = 0,
   ) {
     const query = {
       query: `
@@ -337,8 +337,8 @@ export class AppService {
             }`,
       variables: {
         segment_ids: segmentIds,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
+        limit: Number(limit),
+        offset: Number(offset),
       },
     };
 
