@@ -10,7 +10,20 @@ curl --location '{{HOST-URL}}/health'
 
 Response:
 ```
-OK
+{
+    "status": "ok",
+    "info": {
+        "database": {
+            "status": "up"
+        }
+    },
+    "error": {},
+    "details": {
+        "database": {
+            "status": "up"
+        }
+    }
+}
 ```
 
 2. **Get all segments**
