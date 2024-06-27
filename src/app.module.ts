@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from './auth/auth.module';
-import { AppServiceWithPrisma } from './app.service_prisma';
 import { PrismaService } from './prisma.service';
 import { TerminusModule } from '@nestjs/terminus';
 import { PrismaClient } from '@prisma/client';
@@ -21,6 +20,6 @@ import { PrismaClient } from '@prisma/client';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppServiceWithPrisma, PrismaService, PrismaClient],
+  providers: [AppService, PrismaService, PrismaClient],
 })
 export class AppModule {}

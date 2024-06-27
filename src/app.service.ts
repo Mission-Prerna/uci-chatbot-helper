@@ -1,199 +1,166 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom, map } from 'rxjs';
-import { CreateSegmentBotMappingDto, CreateSegmentBotMappingDtoV2 } from './dto/CreateSegmentBotMapping.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+import {
+  CreateSegmentBotMappingDto,
+  CreateSegmentBotMappingDtoV2,
+} from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 import { SegmentMentorMappingDto } from './dto/CreateMentorSegmentMapping.dto';
 
 @Injectable()
 export class AppService {
-  private readonly hasuraGraphqlUrl;
-  private readonly hasuraGraphqlSecret;
+  protected readonly logger = new Logger(AppService.name);
 
-  protected readonly logger = new Logger(AppService.name); // logger instance
-
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
-  ) {
-    this.hasuraGraphqlUrl = configService.get<string>('HASURA_GRAPHQL_URL');
-    this.hasuraGraphqlSecret = configService.get<string>('HASURA_ADMIN_SECRET');
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   getHealth(): string {
     return 'OK';
   }
 
-  async hasuraGraphQLCall(
-    data,
-    url: string = this.hasuraGraphqlUrl,
-    headers = {
-      'x-hasura-admin-secret': this.hasuraGraphqlSecret,
-      'Content-Type': 'application/json',
-    },
-  ) {
-    return await lastValueFrom(
-      this.httpService
-        .post(url, data, {
-          headers: headers,
-        })
-        .pipe(
-          map((res) => {
-            const error = res?.data?.errors
-            if (error) {
-              // log the error globally & throw 500
-              this.logger.error('GraphQl Errors:', error);
-              throw new InternalServerErrorException(null, error?.[0]?.message || 'GraphQl Error occurred.');
-            }
-            return res.status == 200 ? res.data : null;
-          }),
-        ),
-    );
-  }
-
   async createSegmentBotMapping(data: CreateSegmentBotMappingDto) {
-    const query = {
-      query: `
-        mutation InsertSegmentBot($segment_id: bigint, $bot_id: uuid) {
-        insert_segment_bots_one(object: {segment_id: $segment_id, bot_id: $bot_id}, on_conflict: {constraint: segment_bots_segment_id_bot_id_key, update_columns: bot_id}) {
-          id
-          segment_id
-          bot_id
-          created_at
-        }
-      }`,
-      variables: {
-        segment_id: data.segmentId,
-        bot_id: data.botId
-      }
+    try {
+      const result = await this.prisma.segment_bots.upsert({
+        where: {
+          segment_id_bot_id: { segment_id: data.segmentId, bot_id: data.botId },
+        },
+        update: { bot_id: data.botId },
+        create: { segment_id: data.segmentId, bot_id: data.botId },
+      });
+      return result;
+    } catch (error) {
+      this.logger.error('Error creating segment bot mapping:', error);
+      throw new InternalServerErrorException(
+        'Error creating segment bot mapping',
+      );
     }
-    return await this.hasuraGraphQLCall(query);
   }
 
   async deleteSegmentBotMapping(data: DeleteSegmentBotMappingDto) {
-    const query = {
-      query: `
-      mutation deleteSegmentBots($bot_ids: [uuid!]!) {
-        delete_segment_bots(where : {
-          bot_id:{ _in : $bot_ids}
-        }) {
-         affected_rows
-        }
-    }`,
-      variables: {
-        bot_ids: data.bot_ids.split(',')
-      }
+    try {
+      const result = await this.prisma.segment_bots.deleteMany({
+        where: { bot_id: { in: data.bot_ids.split(',') } },
+      });
+      return { affected_rows: result.count };
+    } catch (error) {
+      this.logger.error('Error deleting segment bot mapping:', error);
+      throw new InternalServerErrorException(
+        'Error deleting segment bot mapping',
+      );
     }
-    return await this.hasuraGraphQLCall(query);
   }
 
-  async getMentorsForSegment(segmentId: bigint, title: string, description: string, deepLink: string, limit: number = 200000, offset: number = 0) {
-    const query = {
-      query: `
-        query GetMentorsForSegment($segment_id: bigint, $limit: Int, $offset: Int) {
-          mentor(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset, order_by: {id: asc}) {
-            phone_no
-            officer_name
-            token {
-              token
-            }
-          }
-        }`,
-      variables: {
-        segment_id: segmentId,
-        limit: Number(limit),
-        offset: Number(offset)
-      }
-    }
-    const results = await this.hasuraGraphQLCall(query);
-    const finalData = [];
-    results?.data?.mentor?.forEach(item => {
-      finalData.push({
-        fcmToken: item.token.token,
-        phoneNo: item.phone_no,
-        name: item.officer_name,
+  async getMentorsForSegment(
+    segmentId: bigint,
+    title: string,
+    description: string,
+    deepLink: string,
+    limit: number = 200000,
+    offset: number = 0,
+  ) {
+    try {
+      const mentors = await this.prisma.mentor.findMany({
+        where: {
+          mentor_segmentation: {
+            some: {
+              segment_id: segmentId,
+            },
+          },
+          mentor_tokens: {
+            token: {
+              not: '',
+            },
+          },
+        },
+        take: Number(limit), // Ensure 'take' is correctly typed as number or bigint
+        skip: Number(offset),
+        orderBy: {
+          id: 'asc',
+        },
+        include: {
+          mentor_tokens: true,
+        },
+      });
+
+      const finalData = mentors.map((mentor) => ({
+        fcmToken: mentor?.mentor_tokens?.token,
+        phoneNo: mentor.phone_no,
+        name: mentor.officer_name,
         title: title,
         description: description,
         fcmClickActionUrl: deepLink,
-      })
-    });
-    return {
-      data: finalData
-    };
+      }));
+
+      return { data: finalData };
+    } catch (error) {
+      this.logger.error('Error fetching mentors for segment:', error);
+      throw new InternalServerErrorException(
+        'Error fetching mentors for segment',
+      );
+    }
   }
 
   async getCountForSegment(segmentId: bigint) {
-    const query = {
-      query: `
-      query getCountForSegment($segment_id: bigint) {
-        mentor_aggregate(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}) {
-          aggregate {
-            count
-          }
-        }
-      }`,
-      variables: {
-        segment_id: segmentId,
+    try {
+      const count = await this.prisma.mentor.count({
+        where: {
+          mentor_segmentation: { some: { segment_id: segmentId } },
+          mentor_tokens: { token: { not: '' } },
+        },
+      });
+      return { totalCount: count };
+    } catch (error) {
+      this.logger.error('Error fetching count for segment:', error);
+      throw new InternalServerErrorException(
+        'Error fetching count for segment',
+      );
+    }
+  }
+
+  async getCountForSegmentV2(segmentIds: bigint[]) {
+    const totalCounts = { totalCounts: 0, segment_id: {} };
+
+    try {
+      for (const segmentId of segmentIds) {
+        const count = await this.prisma.mentor.count({
+          where: {
+            mentor_segmentation: { some: { segment_id: segmentId } },
+            mentor_tokens: { token: { not: '' } },
+          },
+        });
+        totalCounts.segment_id[segmentId.toString()] = count; // Ensure the segment_id keys are strings
+        totalCounts.totalCounts += count;
       }
+
+      return totalCounts;
+    } catch (error) {
+      this.logger.error('Error fetching counts for segments:', error);
+      throw new InternalServerErrorException(
+        'Error fetching counts for segments',
+      );
     }
-    const results = await this.hasuraGraphQLCall(query);
-    const segmentCount = results?.data?.mentor_aggregate?.aggregate?.count;
-    return {
-      totalCount: segmentCount
-    };
   }
-  
-  async getCountForSegmentV2(segmentIds) {
-    let totalCounts = {
-      totalCounts: 0, // Initialize totalCounts to zero
-      segment_id: {} // Initialize segment_id totalCounts
-    };
-  
-    // Loop through each segment ID and query the total count for that segment
-    for (const segmentId of segmentIds) {
-      const query = {
-        query: `
-          query getCountForSegment($segment_id: bigint) {
-            mentor_aggregate(where: {segmentations: {segment_id: {_eq: $segment_id}}, token: {token: {_is_null: false}}}) {
-              aggregate {
-                count
-              }
-            }
-          }`,
-        variables: {
-          segment_id: segmentId,
-        }
-      };
-  
-      const results = await this.hasuraGraphQLCall(query);
-      const segmentCount = results?.data?.mentor_aggregate?.aggregate?.count;
-  
-      // Update totalCounts for each segment
-      totalCounts.segment_id[segmentId] = segmentCount;
-      
-      // Increment totalCounts['totalCounts'] by segmentCount
-      totalCounts['totalCounts'] += segmentCount;
-    }
-  
-    return totalCounts;
-  }
-  
+
   async getAllSegments() {
-    const query = {
-      query: `
-      query {
-        segments {
-          id
-          name
-          description
-          created_at
-          updated_at
-        }
-      }`,
-    };
-    const results = await this.hasuraGraphQLCall(query);
-    return results?.data?.segments || [];
+    try {
+      const segments = await this.prisma.segments.findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      return segments;
+    } catch (error) {
+      this.logger.error('Error fetching all segments:', error);
+      throw new InternalServerErrorException('Error fetching all segments');
+    }
   }
 
   async createSegmentAndMapping(
@@ -201,119 +168,91 @@ export class AppService {
     segmentDescription: string,
     phoneNumbers: string[],
   ) {
-    // Create segment and fetch mentors concurrently
-    const [segmentResult, mentors] = await Promise.all([
-      this.createSegment(segmentName, segmentDescription),
-      this.fetchMentorIds(phoneNumbers)
-  ]);
+    try {
+      let [segmentResult, mentors] = await Promise.all([
+        this.createSegment(segmentName, segmentDescription),
+        this.fetchMentorIds(phoneNumbers),
+      ]);
 
-    //  create segment mentor mappings
-    const mentorSegmentMappings: SegmentMentorMappingDto[] = mentors.map((mentor) => {
+      const mentorSegmentMappings: SegmentMentorMappingDto[] = mentors.map(
+        (mentor) => ({
+          mentor_id: `${mentor.id}`,
+          segment_id: `${segmentResult.id}`,
+          phone_no: mentor.phone_no,
+        }),
+      );
+
+      const mappingsResult = await this.createMappings(mentorSegmentMappings);
+
       return {
-        mentor_id: mentor.id,
-        segment_id: segmentResult.id,
-        phone_no:mentor.phone_no
+        count: mappingsResult,
+        segment: { ...segmentResult, id: Number(segmentResult.id) },
+        mentorsMappedWithSegment: mentorSegmentMappings,
       };
-    });
-
-    const mappingsResult = await this.createMappings(mentorSegmentMappings);
-
-    // return segment and mapping response
-    return {
-      count: mappingsResult,
-      segment: segmentResult,
-      mentorsMappedWithSegment: mentorSegmentMappings,
-    };
+    } catch (error) {
+      this.logger.error('Error creating segment and mapping:', error);
+      throw new InternalServerErrorException(
+        'Error creating segment and mapping',
+      );
+    }
   }
 
   async createSegment(segmentName: string, segmentDescription: string) {
-    // create a new segment
-    const query = {
-      query: `
-        mutation CreateSegment($name: String!, $description: String!) {
-          insert_segments_one(
-            object: { name: $name, description: $description }
-          ) {
-            id
-            name
-            description
-            created_at
-            updated_at
-          }
-        }`,
-      variables: {
-        name: segmentName,
-        description: segmentDescription,
-      },
-    };
-    const result = await this.hasuraGraphQLCall(query);
-    return result?.data?.insert_segments_one;
+    try {
+      const result = await this.prisma.segments.create({
+        data: { name: segmentName, description: segmentDescription },
+      });
+      return result;
+    } catch (error) {
+      this.logger.error('Error creating segment:', error);
+      throw new InternalServerErrorException('Error creating segment');
+    }
   }
 
   async fetchMentorIds(phoneNumbers: string[]) {
-    const query = {
-      query: `
-        query GetMentorIds($phoneNumbers: [String!]!) {
-          mentor(where: {phone_no: {_in: $phoneNumbers}}) {
-            id,
-            phone_no
-          }
-        }`,
-      variables: {
-        phoneNumbers: phoneNumbers,
-      },
-    };
-
-    const result = await this.hasuraGraphQLCall(query);
-    return result?.data?.mentor || [];
+    try {
+      const mentors = await this.prisma.mentor.findMany({
+        where: { phone_no: { in: phoneNumbers } },
+      });
+      return mentors;
+    } catch (error) {
+      this.logger.error('Error fetching mentor IDs:', error);
+      throw new InternalServerErrorException('Error fetching mentor IDs');
+    }
   }
 
   async createMappings(mentorSegmentMappings: SegmentMentorMappingDto[]) {
-       // Create mentor and segment mappings in batch
-       const mutation = {
-        query: `
-            mutation CreateMappings($objects: [mentor_segmentation_insert_input!]!) {
-                insert_mentor_segmentation(objects: $objects) {
-                    affected_rows
-                }
-            }`,
-        variables: {
-            objects: mentorSegmentMappings.map((mapping) => ({
-                mentor_id: parseInt(mapping.mentor_id),
-                segment_id: parseInt(mapping.segment_id),
-            })),
-        },
-    };
-    const result = await this.hasuraGraphQLCall(mutation);
-    return result?.data?.insert_mentor_segmentation?.affected_rows || 0;
+    try {
+      const result = await this.prisma.mentor_segmentation.createMany({
+        data: mentorSegmentMappings.map((mapping) => ({
+          mentor_id: Number(mapping.mentor_id),
+          segment_id: Number(mapping.segment_id),
+        })),
+      });
+      return result.count;
+    } catch (error) {
+      this.logger.error('Error creating mappings:', error);
+      throw new InternalServerErrorException('Error creating mappings');
+    }
   }
-  
+
   async createSegmentBotMappingV2(data: CreateSegmentBotMappingDtoV2) {
-    const segmentBotMappings = data.segmentId
-      .split(',')
-      .map((id) => ({
-        segment_id: Number(id.trim()) as unknown as bigint,
-        bot_id: data.botId,
-      }));
+    const segmentBotMappings = data.segmentId.split(',').map((id) => ({
+      segment_id: Number(id.trim()),
+      bot_id: data.botId,
+    }));
 
-    const query = {
-      query: `
-        mutation InsertSegmentBots($segmentBotMappings: [segment_bots_insert_input!]!) {
-          insert_segment_bots(objects: $segmentBotMappings) {
-            returning {
-              id
-              segment_id
-              bot_id
-              created_at
-            }
-          }
-        }`,
-      variables: {
-        segmentBotMappings,
-      },
-    };
-
-    return await this.hasuraGraphQLCall(query);
+    try {
+      const result = await this.prisma.segment_bots.createMany({
+        data: segmentBotMappings,
+      });
+      return result;
+    } catch (error) {
+      this.logger.error('Error creating segment bot mapping V2:', error);
+      throw new InternalServerErrorException(
+        'Error creating segment bot mapping V2',
+      );
+    }
   }
 
   async getMentorsForSegmentsV2(
@@ -324,39 +263,49 @@ export class AppService {
     limit: number = 200000,
     offset: number = 0,
   ) {
-    const query = {
-      query: `
-            query GetMentorsForSegments($segment_ids: [bigint!], $limit: Int, $offset: Int) {
-                mentor(where: {segmentations: {segment_id: {_in: $segment_ids}}, token: {token: {_is_null: false}}}, limit: $limit, offset: $offset, order_by: {id: asc}) {
-                    phone_no
-                    officer_name
-                    token {
-                        token
-                    }
-                }
-            }`,
-      variables: {
-        segment_ids: segmentIds,
-        limit: Number(limit),
-        offset: Number(offset),
-      },
-    };
+    try {
+      const mentors = await this.prisma.mentor.findMany({
+        where: {
+          mentor_segmentation: {
+            some: {
+              segment_id: { in: segmentIds },
+            },
+          },
+          mentor_tokens: {
+            token: { not: '' },
+          },
+        },
+        select: {
+          phone_no: true,
+          officer_name: true,
+          mentor_tokens: {
+            select: {
+              token: true,
+            },
+          },
+        },
+        take: Number(limit),
+        skip: Number(offset),
+        orderBy: {
+          id: 'asc',
+        },
+      });
 
-    const results = await this.hasuraGraphQLCall(query);
-
-    const finalData =
-      results?.data?.mentor?.map((item) => ({
-        fcmToken: item.token.token,
-        phoneNo: item.phone_no,
-        name: item.officer_name,
+      const finalData = mentors.map((mentor) => ({
+        fcmToken: mentor.mentor_tokens.token,
+        phoneNo: mentor.phone_no,
+        name: mentor.officer_name,
         title: title,
         description: description,
         fcmClickActionUrl: deepLink,
-      })) || [];
+      }));
 
-    return {
-      data: finalData,
-    };
+      return { data: finalData };
+    } catch (error) {
+      this.logger.error('Error fetching mentors for segments V2:', error);
+      throw new InternalServerErrorException(
+        'Error fetching mentors for segments V2',
+      );
+    }
   }
-
 }

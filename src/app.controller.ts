@@ -5,7 +5,6 @@ import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
 import { CreateSegmentDto } from './dto/CreateSegment.dto';
-import { AppServiceWithPrisma } from './app.service_prisma';
 import { PrismaClient } from '@prisma/client';
 import { HealthCheckResult, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 
@@ -14,7 +13,7 @@ export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppServiceWithPrisma,    
+    private readonly appService: AppService,    
     private readonly healthCheckService: HealthCheckService,
     private readonly prismaHealthIndicator: PrismaHealthIndicator,
     private readonly prismaClient: PrismaClient,
