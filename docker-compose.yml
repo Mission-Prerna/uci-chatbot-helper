@@ -5,9 +5,8 @@ services:
     container_name: uci-chatbot-helper
     build:
       context: .
-      dockerfile: Dockerfile
     ports:
       - ${PORT}:3000
     env_file:
-      - .env    
+      - .env
     restart: always
