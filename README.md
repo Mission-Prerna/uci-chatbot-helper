@@ -89,7 +89,7 @@ curl --location '{{HOST-URL}}/segments/{:segmentId}/mentors?title=Test%20Title&d
 
 - **:segmentId**: ID of the segment
 - **deepLink**: deeplink to be embedded in the app (will be replaced with `fcmClickActionUrl` in the response body)
-- **limit**: limit on number of records to fetch; defaults to 2,00,000
+- **limit**: limit on number of records to fetch; defaults to 1,00,000
 - **offset**: offset for pagination; defaults to 0
 - **title**: (OPTIONAL) if present - it'll be returned in the response as well
 - **description**: (OPTIONAL) if present - it'll be returned in the response as well
@@ -166,6 +166,11 @@ curl --location '{{HOST-URL}}/v2/segments/{:segmentIds}/mentors' \
 ```
 
 - **:segmentIds**: `segmentIds` are comma-separated segments Ids
+- **deepLink**: deeplink to be embedded in the app (will be replaced with `fcmClickActionUrl` in the response body)
+- **limit**: limit on number of records to fetch; defaults to 1,00,000
+- **offset**: offset for pagination; defaults to 0
+- **title**: (OPTIONAL) if present - it'll be returned in the response as well
+- **description**: (OPTIONAL) if present - it'll be returned in the response as well
 
 Response:
 ```
@@ -195,7 +200,7 @@ curl --location '{{HOST-URL}}/v2/segments/{:segmentIds}/mentors/count' \
 Response:
 ```
 {
-    "totalCounts": 439389,
+    "totalCount": 439389,
     "segment_id": {
         "1": 37,
         "2": 439352
