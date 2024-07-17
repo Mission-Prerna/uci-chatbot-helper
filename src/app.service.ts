@@ -58,7 +58,7 @@ export class AppService {
     title: string,
     description: string,
     deepLink: string,
-    limit: number = 200000,
+    limit: number = 100000,
     offset: number = 0,
   ) {
     try {
@@ -121,7 +121,7 @@ export class AppService {
   }
 
   async getCountForSegmentV2(segmentIds: bigint[]) {
-    const totalCounts = { totalCounts: 0, segment_id: {} };
+    const totalCount = { totalCount: 0, segment_id: {} };
 
     try {
       for (const segmentId of segmentIds) {
@@ -131,11 +131,11 @@ export class AppService {
             mentor_tokens: { token: { not: '' } },
           },
         });
-        totalCounts.segment_id[segmentId.toString()] = count; // Ensure the segment_id keys are strings
-        totalCounts.totalCounts += count;
+        totalCount.segment_id[segmentId.toString()] = count; // Ensure the segment_id keys are strings
+        totalCount.totalCount += count;
       }
 
-      return totalCounts;
+      return totalCount;
     } catch (error) {
       this.logger.error('Error fetching counts for segments:', error);
       throw new InternalServerErrorException(
@@ -260,7 +260,7 @@ export class AppService {
     title: string,
     description: string,
     deepLink: string,
-    limit: number = 200000,
+    limit: number = 100000,
     offset: number = 0,
   ) {
     try {
