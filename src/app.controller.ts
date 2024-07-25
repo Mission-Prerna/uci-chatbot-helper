@@ -1,33 +1,48 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  SetMetadata,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateSegmentBotMappingDto, CreateSegmentBotMappingDtoV2 } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
-
 import { JwtAuthGuard } from './auth/auth-jwt.guard';
 import { CreateSegmentDto } from './dto/CreateSegment.dto';
 import { PrismaClient } from '@prisma/client';
-import { HealthCheckResult, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
+import {
+  HealthCheckResult,
+  HealthCheckService,
+  PrismaHealthIndicator,
+} from '@nestjs/terminus';
+import { GetSegmentFiltersDto } from './dto/GetSegmentFilters.dto';
+import { CreateSegmentsFromFiltersDto } from './dto/CreateSegmentsFromFilters.dto';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,    
+    private readonly appService: AppService,
     private readonly healthCheckService: HealthCheckService,
     private readonly prismaHealthIndicator: PrismaHealthIndicator,
     private readonly prismaClient: PrismaClient,
   ) {}
 
   @Get()
-  getOk():string {
-    return this.appService.getHealth()
+  getOk(): string {
+    return this.appService.getHealth();
   }
 
   @Get('/health')
-  async getHealth():Promise<HealthCheckResult> {
+  async getHealth(): Promise<HealthCheckResult> {
     return await this.healthCheckService.check([
-      () => this.prismaHealthIndicator.pingCheck('database', this.prismaClient)
+      () => this.prismaHealthIndicator.pingCheck('database', this.prismaClient),
     ]);
   }
 
@@ -56,15 +71,20 @@ export class AppController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    return this.appService.getMentorsForSegment(segmentId, title, description, deepLink, limit, offset);
+    return this.appService.getMentorsForSegment(
+      segmentId,
+      title,
+      description,
+      deepLink,
+      limit,
+      offset,
+    );
   }
 
   @Roles('Admin')
   @UseGuards(JwtAuthGuard)
   @Get('/segments/:id/mentors/count')
-  getCountForSegment(
-    @Param('id') segmentId: bigint,
-  ) {
+  getCountForSegment(@Param('id') segmentId: bigint) {
     return this.appService.getCountForSegment(segmentId);
   }
 
@@ -125,5 +145,19 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   async createSegmentBotMappingV2(@Body() dto: CreateSegmentBotMappingDtoV2) {
     return await this.appService.createSegmentBotMappingV2(dto);
+  }
+
+  @Get('segment-filters')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  async getSegmentsFilter(@Query() query: GetSegmentFiltersDto) {
+    return await this.appService.getSegmentFilters(query);
+  }
+
+  @Post('segment-filters/create')
+  @Roles('Admin')
+  @UseGuards(JwtAuthGuard)
+  async createSegmentsFilter(@Body() body: CreateSegmentsFromFiltersDto) {
+    return await this.appService.createSegmentsFilter(body);
   }
 }
