@@ -12,8 +12,4 @@ export class GetSegmentFiltersDto {
   @IsString()
   @IsNotEmpty()
   blocks: string = '-1';
-
-  @IsString()
-  @IsNotEmpty()
-  schools: string = '-1';
 }
