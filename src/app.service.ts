@@ -1,6 +1,7 @@
 import {
+  BadRequestException,
+  HttpException,
   Injectable,
-  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
@@ -10,6 +11,10 @@ import {
 } from './dto/CreateSegmentBotMapping.dto';
 import { DeleteSegmentBotMappingDto } from './dto/DeleteSegmentBotMapping.dto';
 import { SegmentMentorMappingDto } from './dto/CreateMentorSegmentMapping.dto';
+import { GetSegmentFiltersDto } from './dto/GetSegmentFilters.dto';
+import { CreateSegmentsFromFiltersDto } from './dto/CreateSegmentsFromFilters.dto';
+import { ActorEnum } from './utils/enums';
+import { getPrismaErrorStatusAndMessage } from './utils/utils';
 
 @Injectable()
 export class AppService {
@@ -32,9 +37,19 @@ export class AppService {
       });
       return result;
     } catch (error) {
-      this.logger.error('Error creating segment bot mapping:', error);
-      throw new InternalServerErrorException(
-        'Error creating segment bot mapping',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error creating segment bot mapping:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -46,9 +61,19 @@ export class AppService {
       });
       return { affected_rows: result.count };
     } catch (error) {
-      this.logger.error('Error deleting segment bot mapping:', error);
-      throw new InternalServerErrorException(
-        'Error deleting segment bot mapping',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error deleting segment bot mapping:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -96,9 +121,19 @@ export class AppService {
 
       return { data: finalData };
     } catch (error) {
-      this.logger.error('Error fetching mentors for segment:', error);
-      throw new InternalServerErrorException(
-        'Error fetching mentors for segment',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error fetching mentors for segment:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -113,9 +148,19 @@ export class AppService {
       });
       return { totalCount: count };
     } catch (error) {
-      this.logger.error('Error fetching count for segment:', error);
-      throw new InternalServerErrorException(
-        'Error fetching count for segment',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error fetching count for segment:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -137,9 +182,19 @@ export class AppService {
 
       return totalCount;
     } catch (error) {
-      this.logger.error('Error fetching counts for segments:', error);
-      throw new InternalServerErrorException(
-        'Error fetching counts for segments',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error fetching counts for segments:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -158,8 +213,17 @@ export class AppService {
 
       return segments;
     } catch (error) {
-      this.logger.error('Error fetching all segments:', error);
-      throw new InternalServerErrorException('Error fetching all segments');
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(`Error fetching all segments:- ${errorMessage}`, error);
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
     }
   }
 
@@ -190,9 +254,19 @@ export class AppService {
         mentorsMappedWithSegment: mentorSegmentMappings,
       };
     } catch (error) {
-      this.logger.error('Error creating segment and mapping:', error);
-      throw new InternalServerErrorException(
-        'Error creating segment and mapping',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error creating segment and mapping:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -204,8 +278,17 @@ export class AppService {
       });
       return result;
     } catch (error) {
-      this.logger.error('Error creating segment:', error);
-      throw new InternalServerErrorException('Error creating segment');
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(`Error creating segment:- ${errorMessage}`, error);
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
     }
   }
 
@@ -216,8 +299,17 @@ export class AppService {
       });
       return mentors;
     } catch (error) {
-      this.logger.error('Error fetching mentor IDs:', error);
-      throw new InternalServerErrorException('Error fetching mentor IDs');
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(`Error fetching mentor IDs:- ${errorMessage}`, error);
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
     }
   }
 
@@ -231,8 +323,17 @@ export class AppService {
       });
       return result.count;
     } catch (error) {
-      this.logger.error('Error creating mappings:', error);
-      throw new InternalServerErrorException('Error creating mappings');
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(`Error creating mappings:- ${errorMessage}`, error);
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
     }
   }
 
@@ -248,9 +349,19 @@ export class AppService {
       });
       return result;
     } catch (error) {
-      this.logger.error('Error creating segment bot mapping V2:', error);
-      throw new InternalServerErrorException(
-        'Error creating segment bot mapping V2',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error creating segment bot mapping V2:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
@@ -302,9 +413,247 @@ export class AppService {
 
       return { data: finalData };
     } catch (error) {
-      this.logger.error('Error fetching mentors for segments V2:', error);
-      throw new InternalServerErrorException(
-        'Error fetching mentors for segments V2',
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error fetching mentors for segments V2:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
+    }
+  }
+
+  async getSegmentFilters(query: GetSegmentFiltersDto) {
+    try {
+      const { actors, blocks, districts } = query;
+      const actorIds = actors.split(',').map((id) => Number(id.trim()));
+      const districtIds = districts.split(',').map((id) => Number(id.trim()));
+      const blockIds = blocks.split(',').map((id) => Number(id.trim()));
+
+      const response = {
+        actors: [],
+        districts: [],
+        blocks: [],
+        schools: [],
+      };
+
+      response.actors = await this.getActors();
+
+      if (actorIds.length > 0 && actorIds[0] !== -1)
+        response.districts = await this.getDistrictByActorIds(actorIds);
+
+      if (districtIds.length > 0 && districtIds[0] !== -1)
+        response.blocks = await this.getBlocksByDistrictIds(districtIds);
+
+      if (blockIds.length > 0 && blockIds[0] !== -1)
+        response.schools = await this.getSchoolByDistrictAndBlock(
+          districtIds,
+          blockIds,
+        );
+
+      return response;
+    } catch (error) {
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error fetching segment filters:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
+      );
+    }
+  }
+
+  async getActors() {
+    const actors = await this.prisma.actors.findMany();
+    return actors.map((actor) => ({
+      id: actor.id,
+      label: actor.name,
+    }));
+  }
+
+  async getDistrictByActorIds(actorIds: number[]) {
+    const mentorDistrict = await this.prisma.mentor.findMany({
+      where: { actor_id: { in: actorIds } },
+      distinct: ['district_id'], // Ensure that district IDs are unique
+      select: {
+        district_id: true,
+        districts: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        district_id: 'asc',
+      },
+    });
+
+    // Extract district names and ids from the result
+    return mentorDistrict.map((district) => {
+      return { id: district.districts.id, label: district.districts.name };
+    });
+  }
+
+  async getBlocksByDistrictIds(districtIds: number[]) {
+    const blocks = await this.prisma.blocks.findMany({
+      where: { district_id: { in: districtIds } },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        id: 'asc', // Sort by district_id in ascending order
+      },
+    });
+
+    // Transform the results to include id and label
+    return blocks.map((block) => ({
+      id: block.id,
+      label: block.name,
+    }));
+  }
+
+  async getSchoolByDistrictAndBlock(districtIds: number[], blockIds: number[]) {
+    let whereCondition: any = {};
+
+    if (districtIds.length > 0 && districtIds[0] !== -1) {
+      whereCondition = { ...whereCondition, district_id: { in: districtIds } };
+    }
+
+    if (blockIds.length > 0 && blockIds[0] !== -1) {
+      whereCondition = { ...whereCondition, block_id: { in: blockIds } };
+    }
+
+    const schools = await this.prisma.school_list.findMany({
+      where: whereCondition,
+      select: {
+        udise: true,
+        name: true,
+      },
+    });
+
+    return schools.map((school) => ({
+      id: school.udise,
+      label: school.name,
+    }));
+  }
+
+  async createSegmentsFilter(body: CreateSegmentsFromFiltersDto) {
+    try {
+      const { actors, blocks, description, districts, name, schools } = body;
+      let actorIds = actors;
+
+      // Check if actors array is empty
+      if (!actorIds || actorIds.length === 0) {
+        throw new BadRequestException(
+          'Actors are compulsory and should not be empty.',
+        );
+      }
+
+      const whereCondition: any = {};
+
+      if (districts && districts.length > 0) {
+        whereCondition.district_id = { in: districts };
+      }
+
+      if (blocks && blocks.length > 0) {
+        whereCondition.block_id = { in: blocks };
+      }
+
+      let mentors = [];
+
+      if (
+        actorIds.includes(ActorEnum.TEACHER) &&
+        schools &&
+        schools.length > 0
+      ) {
+        // Special case when actor is  teacher and schools (udise) are not empty
+        whereCondition.actor_id = ActorEnum.TEACHER;
+        const teachers = await this.prisma.mentor.findMany({
+          where: {
+            AND: [
+              whereCondition,
+              {
+                teacher_school_list_mapping: {
+                  some: {
+                    school_list: {
+                      udise: { in: schools },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          select: {
+            phone_no: true,
+            id: true,
+          },
+        });
+
+        mentors.push(...teachers);
+        // filter out teacher from actors
+        actorIds = actorIds.filter((actor) => actor !== 3);
+      }
+      // Default case if actors are not empty
+      if (actorIds.length > 0) {
+        whereCondition.actor_id = { in: actorIds };
+        const otherMentors = await this.prisma.mentor.findMany({
+          where: whereCondition,
+          select: {
+            phone_no: true,
+            id: true,
+          },
+        });
+        mentors.push(...otherMentors);
+      }
+
+      // create segment
+      const segment = await this.prisma.segments.create({
+        data: {
+          description,
+          name,
+        },
+      });
+
+      // map segment with mentors
+      const mentorSegmentMappings = mentors.map((mentor) => ({
+        phone_no: mentor.phone_no,
+        mentor_id: `${mentor.id}`,
+        segment_id: `${segment.id}`,
+      }));
+
+      await this.createMappings(mentorSegmentMappings);
+
+      return segment;
+    } catch (error) {
+      const { errorMessage, statusCode } =
+        getPrismaErrorStatusAndMessage(error);
+      this.logger.error(
+        `Error creating segment and mentor mapping by segment filter:- ${errorMessage}`,
+        error,
+      );
+
+      throw new HttpException(
+        {
+          error_message: errorMessage,
+          error_code: statusCode,
+        },
+        statusCode,
       );
     }
   }
