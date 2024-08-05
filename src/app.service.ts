@@ -57,7 +57,7 @@ export class AppService {
   async deleteSegmentBotMapping(data: DeleteSegmentBotMappingDto) {
     try {
       const result = await this.prisma.segment_bots.deleteMany({
-        where: { bot_id: { in: data.bot_ids.split(',') } },
+        where: { bot_id: { in: data.bot_ids } },
       });
       return { affected_rows: result.count };
     } catch (error) {
