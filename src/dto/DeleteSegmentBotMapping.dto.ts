@@ -1,8 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import {
-  IsArray, IsNotEmpty,
-  IsUUID,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsUUID } from 'class-validator';
 
 export class DeleteSegmentBotMappingDto {
   @IsArray()
@@ -11,7 +8,7 @@ export class DeleteSegmentBotMappingDto {
   @IsNotEmpty()
   @Transform(({ value }) => {
     const botIds = value.split(',');
-    return botIds.map(botId => botId.trim())
+    return botIds.map((botId: string) => botId.trim());
   })
-  bot_ids?: string;
+  bot_ids?: string[];
 }
